@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useAuth } from "../context/AuthContext";
-import styles from "../styles";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useAuth } from "../../context/AuthContext";
+import styles from "../../styles";
 
-export default function RegistroAdminScreen({ navigation }) {
+export default function Registro() {
   const { registro, login } = useAuth();
+  const router = useRouter();
+  const { admin } = useLocalSearchParams<{ admin?: string }>();
+  const esAdmin = admin === "1";
+
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,9 +24,9 @@ export default function RegistroAdminScreen({ navigation }) {
     setError("");
     setCargando(true);
     try {
-      await registro(nombre.trim(), email.trim(), password, "admin");
+      await registro(nombre.trim(), email.trim(), password, esAdmin ? "admin" : "cliente");
       await login(email.trim(), password);
-    } catch (e) {
+    } catch (e: any) {
       setError(e.message);
       setCargando(false);
     }
@@ -29,18 +34,13 @@ export default function RegistroAdminScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear cuenta de administrador</Text>
+      <Stack.Screen options={{ title: esAdmin ? "Registro administrador" : "Registro" }} />
+      <Text style={styles.title}>{esAdmin ? "Cuenta de administrador" : "Crear cuenta"}</Text>
 
-      <TextInput style={styles.input} 
-      placeholder="Nombre"
-      placeholderTextColor="#999"
-       value={nombre} 
-       onChangeText={setNombre} 
-       />
+      <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor="#999"
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -49,7 +49,6 @@ export default function RegistroAdminScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Contraseña"
-        placeholderTextColor="#999"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -61,13 +60,19 @@ export default function RegistroAdminScreen({ navigation }) {
         <ActivityIndicator size="large" color="#6c3fc5" />
       ) : (
         <TouchableOpacity style={styles.button} onPress={enviar}>
-          <Text style={styles.buttonText}>Registrarme como administrador</Text>
+          <Text style={styles.buttonText}>Registrarme</Text>
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.link}>Volver al registro normal</Text>
+      <TouchableOpacity onPress={() => router.back()}>
+        <Text style={styles.link}>Ya tengo cuenta</Text>
       </TouchableOpacity>
+
+      {!esAdmin && (
+        <TouchableOpacity onPress={() => router.push({ pathname: "/registro", params: { admin: "1" } })}>
+          <Text style={styles.link}>Registrarme como administrador</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

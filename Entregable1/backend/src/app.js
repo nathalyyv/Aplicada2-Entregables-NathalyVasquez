@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { loggerMiddleware } from "./middlewares/logger.middleware.js";
+import reservasRoutes from "./routes/reservas.js";
 import authRoutes from "./routes/auth.routes.js";
 import serviciosRoutes from "./routes/servicios.routes.js";
 
@@ -12,6 +13,7 @@ app.use(loggerMiddleware);
 
 app.use("/auth", authRoutes);
 app.use("/servicios", serviciosRoutes);
+app.use("/reservas", reservasRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });

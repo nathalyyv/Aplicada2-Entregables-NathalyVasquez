@@ -21,5 +21,11 @@ export default StyleSheet.create({
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   link: { color: "#6c3fc5", textAlign: "center", marginTop: 16 },
   error: { color: "#c0392b", marginBottom: 12, textAlign: "center" },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  card: { backgroundColor: "#f5f0ff", padding: 16, borderRadius: 10, marginBottom: 12 },
+  cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 4 },
+  cardText: { fontSize: 15, color: "#444" },
+  smallRow: { flexDirection: "row", gap: 10, marginTop: 12 },
+  smallButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
+  smallButtonText: { color: "#fff", fontWeight: "600" },
 });

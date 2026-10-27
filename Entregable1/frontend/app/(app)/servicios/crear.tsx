@@ -1,18 +1,32 @@
 import { useState } from "react";
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity } from "react-native";
-import { request } from "../services/api";
-import styles from "../styles";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useAuth } from "../../../context/AuthContext";
+import { guardarServicio } from "../../../features/servicios/servicios.api";
+import styles from "../../../styles";
 
-export default function CrearServicioScreen({ navigation, route }) {
-  const servicio = route.params?.servicio;
-  const editando = !!servicio;
+export default function CrearServicio() {
+  const router = useRouter();
+  const { esAdmin } = useAuth();
+  const p = useLocalSearchParams<{
+    id?: string;
+    nombre?: string;
+    descripcion?: string;
+    duracion?: string;
+    precio?: string;
+  }>();
+  const editando = !!p.id;
 
-  const [nombre, setNombre] = useState(servicio?.nombre ?? "");
-  const [descripcion, setDescripcion] = useState(servicio?.descripcion ?? "");
-  const [duracion, setDuracion] = useState(servicio ? String(servicio.duracion) : "");
-  const [precio, setPrecio] = useState(servicio ? String(servicio.precio) : "");
+  const [nombre, setNombre] = useState(p.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(p.descripcion ?? "");
+  const [duracion, setDuracion] = useState(p.duracion ?? "");
+  const [precio, setPrecio] = useState(p.precio ?? "");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
+
+  if (!esAdmin) {
+    return <Text style={styles.error}>Solo los administradores pueden ver esta pantalla</Text>;
+  }
 
   const guardar = async () => {
     if (!nombre.trim() || !descripcion.trim() || !duracion || !precio) {
@@ -22,17 +36,14 @@ export default function CrearServicioScreen({ navigation, route }) {
     setError("");
     setCargando(true);
     try {
-      await request(editando ? `/servicios/${servicio.id}` : "/servicios", {
-        method: editando ? "PUT" : "POST",
-        body: {
-          nombre: nombre.trim(),
-          descripcion: descripcion.trim(),
-          duracion: Number(duracion),
-          precio: Number(precio),
-        },
+      await guardarServicio(p.id ? Number(p.id) : null, {
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        duracion: Number(duracion),
+        precio: Number(precio),
       });
-      navigation.goBack();
-    } catch (e) {
+      router.back();
+    } catch (e: any) {
       setError(e.message);
       setCargando(false);
     }
@@ -40,23 +51,19 @@ export default function CrearServicioScreen({ navigation, route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <Stack.Screen options={{ title: editando ? "Editar servicio" : "Nuevo servicio" }} />
       <Text style={styles.title}>{editando ? "Editar servicio" : "Nuevo servicio"}</Text>
 
-      <TextInput style={styles.input} 
-      placeholder="Nombre" value={nombre} 
-      placeholderTextColor="#999"
-      onChangeText={setNombre} />
+      <TextInput style={styles.input} placeholder="Nombre" value={nombre} onChangeText={setNombre} />
       <TextInput
         style={styles.input}
         placeholder="Descripción"
-        placeholderTextColor="#999"
         value={descripcion}
         onChangeText={setDescripcion}
       />
       <TextInput
         style={styles.input}
         placeholder="Duración (minutos)"
-        placeholderTextColor="#999"
         keyboardType="numeric"
         value={duracion}
         onChangeText={setDuracion}
@@ -64,7 +71,6 @@ export default function CrearServicioScreen({ navigation, route }) {
       <TextInput
         style={styles.input}
         placeholder="Precio"
-        placeholderTextColor="#999"
         keyboardType="decimal-pad"
         value={precio}
         onChangeText={setPrecio}

@@ -1,10 +1,22 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { request, setUnauthorizedHandler, TOKEN_KEY } from "../services/api";
 
+type Usuario = { id: number; email: string; rol: string; exp?: number };
+
+type AuthValue = {
+  token: string | null;
+  usuario: Usuario | null;
+  esAdmin: boolean;
+  cargando: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  registro: (nombre: string, email: string, password: string, rol: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-function base64Decode(str) {
+function base64Decode(str: string) {
   let output = "";
   let buffer = 0;
   let bits = 0;
@@ -22,7 +34,7 @@ function base64Decode(str) {
   return output;
 }
 
-function decodificarToken(token) {
+function decodificarToken(token: string): Usuario | null {
   try {
     const payload = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
     return JSON.parse(base64Decode(payload));
@@ -31,13 +43,13 @@ function decodificarToken(token) {
   }
 }
 
-const expirado = (datos) => datos?.exp && datos.exp * 1000 < Date.now();
+const expirado = (u: Usuario | null) => !!u?.exp && u.exp * 1000 < Date.now();
 
-const AuthContext = createContext(null);
+const AuthContext = createContext<AuthValue | null>(null);
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [usuario, setUsuario] = useState(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
 
   const logout = useCallback(async () => {
@@ -53,7 +65,7 @@ export function AuthProvider({ children }) {
       const guardado = await AsyncStorage.getItem(TOKEN_KEY);
       const datos = guardado ? decodificarToken(guardado) : null;
 
-      if (datos && !expirado(datos)) {
+      if (guardado && datos && !expirado(datos)) {
         setToken(guardado);
         setUsuario(datos);
       } else if (guardado) {
@@ -63,8 +75,19 @@ export function AuthProvider({ children }) {
     })();
   }, [logout]);
 
-  const login = async (email, password) => {
-    const data = await request("/auth/login", {
+  useEffect(() => {
+    if (!usuario?.exp) return;
+    const ms = usuario.exp * 1000 - Date.now();
+    if (ms <= 0) {
+      logout();
+      return;
+    }
+    const t = setTimeout(logout, Math.min(ms, 2147483647));
+    return () => clearTimeout(t);
+  }, [usuario, logout]);
+
+  const login = async (email: string, password: string) => {
+    const data = await request<{ token: string }>("/auth/login", {
       method: "POST",
       body: { email, password },
       auth: false,
@@ -74,12 +97,13 @@ export function AuthProvider({ children }) {
     setUsuario(decodificarToken(data.token));
   };
 
-  const registro = (nombre, email, password, rol) =>
-    request("/auth/registro", {
+  const registro = async (nombre: string, email: string, password: string, rol: string) => {
+    await request("/auth/registro", {
       method: "POST",
       body: { nombre, email, password, rol },
       auth: false,
     });
+  };
 
   return (
     <AuthContext.Provider
@@ -90,4 +114,8 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
+  return ctx;
+}
