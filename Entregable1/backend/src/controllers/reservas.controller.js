@@ -43,8 +43,21 @@ export const crearReserva = async (req, res, next) => {
     }
 
     const servicio = await prisma.servicio.findUnique({ where: { id: Number(servicioId) } });
-    if (!servicio) {
-      return res.status(404).json({ error: "El servicio no existe" });
+    if (!servicio || !servicio.activo) {
+      return res.status(404).json({ error: "El servicio no existe o no esta activo" });
+    }
+
+    const reservaExistente = await prisma.reserva.findFirst({
+      where: {
+        usuarioId,
+        servicioId: Number(servicioId),
+        fecha,
+        estado: "pendiente"
+      }
+    });
+
+    if (reservaExistente) {
+      return res.status(409).json({ error: "Ya tienes una reserva activa para este servicio en esta fecha" });
     }
 
     const nuevaReserva = await prisma.reserva.create({

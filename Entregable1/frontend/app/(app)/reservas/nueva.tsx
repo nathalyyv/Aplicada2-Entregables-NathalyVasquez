@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { crearReserva } from "../../../features/reservas/reservas.api";
 import { validarReserva } from "../../../lib/validaciones";
 import styles from "../../../styles";
+import { programarNotificacionReserva } from "../../../lib/notificaciones"; 
 
 export default function NuevaReserva() {
   const router = useRouter();
@@ -23,6 +24,9 @@ export default function NuevaReserva() {
     setCargando(true);
     try {
       await crearReserva(Number(servicioId), fecha, hora);
+      
+      await programarNotificacionReserva(nombre, `${fecha}T${hora}:00`);
+
       Alert.alert("Listo", "Tu reserva fue creada y está pendiente");
       router.replace("/reservas");
     } catch (e: any) {

@@ -4,6 +4,6 @@ export default {
     slug: "reservas-salon",
     scheme: "reservas-salon",
     plugins: ["expo-router"],
-    extra: { apiUrl: "http://10.0.0.10:3000" },
+    extra: { apiUrl: "https://aplicada2-entregables-nathalyvasquez.onrender.com" },
   },
 };

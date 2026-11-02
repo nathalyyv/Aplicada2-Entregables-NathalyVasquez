@@ -62,7 +62,11 @@ export default function Servicios() {
           </TouchableOpacity>
         ),
         headerRight: () => (
-          <View style={{ flexDirection: "row", gap: 16 }}>
+          <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+            <TouchableOpacity onPress={() => router.push("/perfil")}>
+              <Text style={{ color: "#2980b9", fontWeight: "600" }}>Mi perfil</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={() => router.push("/reservas")}>
               <Text style={{ color: "#6c3fc5", fontWeight: "600" }}>
                 {esAdmin ? "Reservas" : "Mis reservas"}
@@ -81,7 +85,7 @@ export default function Servicios() {
 
   if (cargando) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { flex: 1, paddingTop: 45 }]}>
         {cabecera}
         <ActivityIndicator size="large" color="#6c3fc5" />
       </View>
@@ -90,7 +94,7 @@ export default function Servicios() {
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { flex: 1, paddingTop: 45 }]}>
         {cabecera}
         <Text style={styles.error}>{error}</Text>
         <TouchableOpacity style={styles.button} onPress={cargar}>
@@ -101,7 +105,7 @@ export default function Servicios() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: "#fff", paddingTop: 45 }}>
       {cabecera}
       <FlatList
         data={servicios}
